@@ -1,12 +1,13 @@
 package com.llama.tech.bicycle.backend;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 
 import com.llama.tech.misc.LlamaTuple;
 
-public class Estacion implements Comparable<Estacion>{
+public class Estacion implements Comparable<Estacion> ,Serializable{
 	
 	private boolean habilitada;
 	private boolean seleccionada;

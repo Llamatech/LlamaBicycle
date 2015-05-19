@@ -22,6 +22,8 @@ import com.llama.tech.bicycle.gui.components.SystemMap;
 import com.llama.tech.misc.LlamaTuple;
 import com.llama.tech.utils.list.Lista;
 import com.llama.tech.utils.list.LlamaArrayList;
+import javax.swing.JTextField;
+import javax.swing.border.EtchedBorder;
 
 public class VistaConexiones extends JPanel implements ActionListener
 {
@@ -32,6 +34,7 @@ public class VistaConexiones extends JPanel implements ActionListener
 	private JList<Conexion> list;
 	private int lastId;
 	private DisplayBy state = DisplayBy.NONE;
+	private JTextField textField;
 	
 	public VistaConexiones(Interfaz principal) 
 	{
@@ -44,7 +47,7 @@ public class VistaConexiones extends JPanel implements ActionListener
 		add(mapa);
 		
 		JButton btnMostrarConexionesDesde = new JButton("<HTML>Mostrar conexiones\n <br><center>\ndesde origen</center></HTML>");
-		btnMostrarConexionesDesde.setBounds(404, 57, 171, 47);
+		btnMostrarConexionesDesde.setBounds(404, 32, 171, 47);
 		btnMostrarConexionesDesde.setActionCommand("DESDE");
 		btnMostrarConexionesDesde.addActionListener(this);
 		add(btnMostrarConexionesDesde);
@@ -56,25 +59,25 @@ public class VistaConexiones extends JPanel implements ActionListener
 		add(btnHabilitardeshabilitarConexin);
 		
 		JButton btnmostrarConexionesHacia = new JButton("<HTML>Mostrar conexiones\n <br><center>\nhacia destino</center></HTML>");
-		btnmostrarConexionesHacia.setBounds(404, 116, 171, 47);
+		btnmostrarConexionesHacia.setBounds(404, 91, 171, 47);
 		btnmostrarConexionesHacia.setActionCommand("HACIA");
 		btnmostrarConexionesHacia.addActionListener(this);
 		add(btnmostrarConexionesHacia);
 		
 		JButton btnmostrarEstaciones = new JButton("<HTML>Mostrar Estaciones</HTML>");
-		btnmostrarEstaciones.setBounds(404, 173, 171, 47);
+		btnmostrarEstaciones.setBounds(404, 148, 171, 47);
 		btnmostrarEstaciones.setActionCommand("ESTACIONES");
 		btnmostrarEstaciones.addActionListener(this);
 		add(btnmostrarEstaciones);
 		
 		JButton btndeshabilitarEstacion = new JButton("Deshabilitar Estacion");
-		btndeshabilitarEstacion.setBounds(404, 233, 171, 47);
+		btndeshabilitarEstacion.setBounds(404, 208, 171, 47);
 		btndeshabilitarEstacion.addActionListener(this);
 		btndeshabilitarEstacion.setActionCommand("DESHABILITAR");
 		add(btndeshabilitarEstacion);
 		
 		JButton btnhabilitarEstacion = new JButton("<HTML>Habilitar Estacion</HTML>");
-		btnhabilitarEstacion.setBounds(404, 292, 171, 47);
+		btnhabilitarEstacion.setBounds(404, 267, 171, 47);
 		btnhabilitarEstacion.setActionCommand("HABILITAR");
 		btnhabilitarEstacion.addActionListener(this);
 		add(btnhabilitarEstacion);
@@ -91,6 +94,18 @@ public class VistaConexiones extends JPanel implements ActionListener
 		list = new JList<Conexion>(model);
 		list.setBackground(UIManager.getColor("Button.background"));
 		scrollPane.setViewportView(list);
+		
+		textField = new JTextField();
+		textField.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+		textField.setEditable(false);
+		textField.setBounds(404, 353, 171, 19);
+		add(textField);
+		textField.setColumns(10);
+		textField.setText("<Sin seleccionar>");
+		
+		JLabel lblEstacinSeleccionada = new JLabel("Estación seleccionada:");
+		lblEstacinSeleccionada.setBounds(404, 326, 171, 15);
+		add(lblEstacinSeleccionada);
 	}
 	
 	@Override
@@ -107,7 +122,7 @@ public class VistaConexiones extends JPanel implements ActionListener
 			}
 			catch(NumberFormatException npe)
 			{
-				JOptionPane.showMessageDialog(this, "Debe ingresar un id válido", "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Debe ingresar un id válido", "Error", JOptionPane.WARNING_MESSAGE);
 			}
 		}
 		else if (e.getActionCommand().equals("HACIA"))
@@ -205,45 +220,64 @@ public class VistaConexiones extends JPanel implements ActionListener
 	{
 		 model.clear();
 	     Lista<Conexion> list = main.showConnectionsByDestination(lastId);
-	     Lista<Conexion> disabled = main.getDisabledConnections();
-	     list.addAll(disabled);
-	     LlamaArrayList<LlamaTuple<MapMarker, MapMarker>> routes = new LlamaArrayList<LlamaTuple<MapMarker, MapMarker>>(list.size());
-	     LlamaArrayList<MapMarker> markers = new LlamaArrayList<MapMarker>(list.size());
-	     Conexion c1 = list.getFirst();
-	     Estacion initial = c1.getOrigen();
-	     markers.addAlFinal(new MapMarker(initial.getLatitud(), initial.getLongitud()));
-	     for(Conexion c : list)
+	     if(list != null)
 	     {
-	    	 if(state == DisplayBy.ORIGIN)
-	    	 {
-	    		 c = c.clone();
-	    		 c.invert();
-	    	 }
-	    	 if(c.isHabilitado())
-	    	 {
-	    		 initial = c.getOrigen();
-	    		 Estacion dest = c.getDestino();
-	    		 MapMarker m1 = new MapMarker(initial.getLatitud(), initial.getLongitud());
-	    		 MapMarker m2 = new MapMarker(dest.getLatitud(), dest.getLongitud());
-	    	 
-	    		 if(state == DisplayBy.ORIGIN)
+		     Lista<Conexion> disabled = main.getDisabledConnections();
+		     list.addAll(disabled);
+		     LlamaArrayList<LlamaTuple<MapMarker, MapMarker>> routes = new LlamaArrayList<LlamaTuple<MapMarker, MapMarker>>(list.size());
+		     LlamaArrayList<MapMarker> markers = new LlamaArrayList<MapMarker>(list.size());
+		     Conexion c1 = list.getFirst();
+		     Estacion initial = c1.getOrigen();
+		     markers.addAlFinal(new MapMarker(initial.getLatitud(), initial.getLongitud()));
+		     for(Conexion c : list)
+		     {
+		    	 if(state == DisplayBy.ORIGIN)
 		    	 {
-	    			 markers.addAlFinal(m2);
+		    		 boolean habilitado = c.isHabilitado();
+		    		 c = c.clone();
+		    		 c.setHabilitado(habilitado);
+		    		 c.invert();
 		    	 }
-	    		 else
-	    			 markers.addAlFinal(m1);
-	    		 routes.addAlFinal(new LlamaTuple<MapMarker, MapMarker>(m1, m2));
-	    	 }
-	    	 
-	    	 model.addElement(c);
+		    	 if(c.isHabilitado())
+		    	 {
+		    		 initial = c.getOrigen();
+		    		 Estacion dest = c.getDestino();
+		    		 MapMarker m1 = new MapMarker(initial.getLatitud(), initial.getLongitud());
+		    		 MapMarker m2 = new MapMarker(dest.getLatitud(), dest.getLongitud());
+		    	 
+		    		 if(state == DisplayBy.ORIGIN)
+			    	 {
+		    			 markers.addAlFinal(m2);
+			    	 }
+		    		 else
+		    			 markers.addAlFinal(m1);
+		    		 routes.addAlFinal(new LlamaTuple<MapMarker, MapMarker>(m1, m2));
+		    	 }
+		    	 
+		    	 model.addElement(c);
+		     }
+		     
+		     mapa.displayRoutes(routes);
+		     mapa.setMarkers(markers);
 	     }
-	     
-	     mapa.displayRoutes(routes);
-	     mapa.setMarkers(markers);
 	}
 
 	private enum DisplayBy
 	{
 		ORIGIN, DESTINATION, NONE 
+	}
+
+	public void notifyStation() 
+	{
+		Estacion e = main.getSelectedStation();
+		if(e != null)
+		{
+			textField.setText("Id: "+e.getId()+"; "+e.getNombre());
+		}
+		else
+		{
+			textField.setText("<Sin seleccionar>");
+		}
+		
 	}
 }

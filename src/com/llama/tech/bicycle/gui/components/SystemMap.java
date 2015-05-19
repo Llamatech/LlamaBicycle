@@ -12,6 +12,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import com.llama.tech.bicycle.gui.Interfaz;
+import com.llama.tech.bicycle.gui.VistaCaminos;
+import com.llama.tech.bicycle.gui.VistaConexiones;
 import com.llama.tech.misc.LlamaTuple;
 import com.llama.tech.utils.dict.LlamaDict;
 import com.llama.tech.utils.list.LlamaArrayList;
@@ -71,6 +73,16 @@ public class SystemMap extends JPanel
 		System.out.println("Pos: "+lat+","+lon);
 	    LlamaTuple<Double, Double> pos = new LlamaTuple<Double, Double>(lat, lon);
 	    main.propagateClick(pos);
+	    
+	    try
+	    {
+	    	VistaConexiones vc = ((VistaConexiones) getParent());
+	    	vc.notifyStation();
+	    }
+	    catch(ClassCastException e)
+	    {
+	    	
+	    }
 	}
 
     

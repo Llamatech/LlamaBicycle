@@ -49,6 +49,7 @@ public class DialogoRecomendado extends JDialog implements ActionListener {
 		btnIr.addActionListener(this);
 		getContentPane().add(btnIr);
 		
+		setModalityType(DEFAULT_MODALITY_TYPE);
 		setVisible(true);
 	}
 

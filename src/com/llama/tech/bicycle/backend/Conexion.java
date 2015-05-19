@@ -1,6 +1,8 @@
 package com.llama.tech.bicycle.backend;
 
-public class Conexion implements Comparable<Conexion>{
+import java.io.Serializable;
+
+public class Conexion implements Comparable<Conexion>, Serializable{
 	
 	private boolean habilitado;
 	
@@ -65,7 +67,7 @@ public class Conexion implements Comparable<Conexion>{
 	@Override
 	public String toString()
 	{
-		return "Habilitada: "+habilitado+" | Número: "+ numero + " | Origen: "+ origen.getNombre() + " - Destino: "+ destino.getNombre() + " | Viajes:" + viajes;//+segsPromedio+" "+segsMax;
+		return "Habilitada: "+habilitado+" | Número: "+ numero + " | Origen: "+"(Id: "+origen.getId()+") "+ origen.getNombre() + " - Destino: (Id:"+destino.getId()+")"+ destino.getNombre() + " | Viajes:" + viajes;//+segsPromedio+" "+segsMax;
 	}
 
 	@Override

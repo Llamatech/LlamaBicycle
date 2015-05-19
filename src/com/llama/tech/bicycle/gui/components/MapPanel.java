@@ -757,7 +757,14 @@ public class MapPanel extends JPanel {
 	    	        }
 	    	        else
 	    	        {
-	    	        	g.setColor(new Color(r.nextInt(256),r.nextInt(256),r.nextInt(256),128));
+	    	        	if(m.color == null)
+	    	        	{
+	    	        		g.setColor(new Color(r.nextInt(256),r.nextInt(256),r.nextInt(256),128));
+	    	        	}
+	    	        	else
+	    	        	{
+	    	        		g.setColor(m.color);
+	    	        	}
 	    	        	Line2D.Double line = new Line2D.Double(last_P.x, last_P.y, x_pos, y_pos);
 	    	        	g.draw(line);
 	    	        	last_P.x = x_pos; 

@@ -2,6 +2,7 @@ package com.llama.tech.bicycle.backend;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Iterator;
 
@@ -26,7 +27,7 @@ import com.llama.tech.utils.graph.LlamaGraph;
 import com.llama.tech.utils.list.Lista;
 import com.llama.tech.utils.list.LlamaArrayList;
 
-public class BicycleManager 
+public class BicycleManager implements Serializable
 {
 	public static final String RUTA_ESTACIONES = "data/Estaciones-Hubway.xls";
 	public static final String RUTA_CONEXIONES = "data/Conexiones-Hubway.xls";
@@ -38,6 +39,9 @@ public class BicycleManager
 	private Dictionary<Integer, Estacion> estaciones;
 	private Lista<Conexion> caminosDes;
 	private Lista<Estacion> estacionesDes;
+	private Dictionary<Integer, Lista<GraphEdge<Integer, Estacion, Conexion>>> conexionesDeDes;
+	double tiempo;
+	int longitud;
 
 	public BicycleManager(int limite) throws BiffException, IOException
 	{
@@ -46,6 +50,7 @@ public class BicycleManager
 		estaciones = new LlamaDict<Integer,Estacion>(200);
 		caminosDes = new LlamaArrayList<>(20);
 		estacionesDes= new LlamaArrayList<>(20);
+		conexionesDeDes = new LlamaDict<Integer, Lista<GraphEdge<Integer,Estacion,Conexion>>>(20);
 		cargarEstaciones();
 		cargarConexiones(limite);
 	}
@@ -141,6 +146,10 @@ public class BicycleManager
 	{
 		Estacion e = estaciones.getValue(id);
 		grafo.agregarVertice(id, e);
+		for(GraphEdge<Integer, Estacion, Conexion> ex:conexionesDeDes.getValue(e.getId()))
+		{
+			grafo.agregarArco(ex.darOrigen().darId(), ex.darDestino().darId(), ex.darInfoArco(), ex.darCosto());
+		}
 		e.setHabilitada(true);
 		estacionesDes.remove(e);
 
@@ -152,6 +161,7 @@ public class BicycleManager
 			throw new BiciException("No hay ninguna estacion seleccionada");
 		seleccionada.setHabilitada(false);
 		estacionesDes.addAlFinal(seleccionada);
+		conexionesDeDes.addEntry(seleccionada.getId(), ((GraphVertex<Integer, Estacion, Conexion>)grafo.darVertice(seleccionada.getId())).getEdgesFrom());
 		grafo.eliminarVertice(seleccionada.getId());
 		seleccionada=null;
 	}
@@ -161,11 +171,19 @@ public class BicycleManager
 		Conexion c = caminos.getValue(numero);
 		grafo.agregarArco(c.getOrigen().getId(), c.getDestino().getId(), c, c.getSegsPromedio());
 		c.setHabilitado(true);
-		caminosDes.remove(c);
+		for (int i = 0; i < caminosDes.size(); i++) {
+			if(caminosDes.get(i).getNumero()==c.getNumero())
+			{
+				caminosDes.remove(i);
+				break;
+			}
+		}
+		
 	}
 
-	public void deshabilitarCamino(Conexion c)
-	{
+	public void deshabilitarCamino(int cx)
+	{	
+		Conexion c = caminos.getValue(cx);
 		grafo.eliminarArco(c.getOrigen().getId(), c.getDestino().getId());
 		c.setHabilitado(false);
 		caminosDes.addAlFinal(c);
@@ -204,7 +222,7 @@ public class BicycleManager
 			while(it.hasNext())
 			{
 				Conexion c = it.next().darInfoArco();
-				if(c.getDestino().isHabilitada())
+				if(c.getDestino().isHabilitada()&&c.isHabilitado())
 				{
 					conexiones.addAlFinal(c);
 				}
@@ -274,48 +292,63 @@ public class BicycleManager
 
 	public Lista<Conexion> conexionesHaciaConex(int id) throws BiciException 
 	{
-		Estacion destino = grafo.darVertice(id).darValor();
-		Lista<Conexion> lista = new LlamaArrayList<>(20000);
-		if(!destino.isHabilitada())
-			throw new BiciException("La estación destino no está habilitada");
-		GraphVertex<Integer, Estacion, Conexion> dest = (GraphVertex<Integer, Estacion, Conexion>)grafo.darVertice(id);
-		for(GraphEdge<Integer, Estacion, Conexion> e:dest.getEdgesFrom())
+		try
 		{
-			Conexion c = e.darInfoArco();
-			if(c.isHabilitado()&&c.getOrigen().isHabilitada())
+			Estacion destino = grafo.darVertice(id).darValor();
+			Lista<Conexion> lista = new LlamaArrayList<>(20000);
+			if(!destino.isHabilitada())
+				throw new BiciException("La estación destino no está habilitada");
+			GraphVertex<Integer, Estacion, Conexion> dest = (GraphVertex<Integer, Estacion, Conexion>)grafo.darVertice(id);
+			for(GraphEdge<Integer, Estacion, Conexion> e:dest.getEdgesFrom())
 			{
-				lista.addAlFinal(c);
+				Conexion c = e.darInfoArco();
+				if(c.isHabilitado()&&c.getOrigen().isHabilitada())
+				{
+					lista.addAlFinal(c);
+				}
 			}
+			return lista;
+		}
+		catch (NullPointerException e)
+		{
+			throw new BiciException("No existe una estación con ese id");
 		}
 
-		return lista;
+
 	}
 
 	public Lista<Estacion> conexionesHaciaEst(int id) throws BiciException
 	{
-		Estacion destino = grafo.darVertice(id).darValor();
-		Lista<Estacion> lista = new LlamaArrayList<>(200);
-		if(!destino.isHabilitada())
-			throw new BiciException("La estación destino no está habilitada");
-		lista.addAlFinal(destino);
-		GraphVertex<Integer, Estacion, Conexion> dest = (GraphVertex<Integer, Estacion, Conexion>)grafo.darVertice(id);
-		for(GraphEdge<Integer, Estacion, Conexion> e:dest.getEdgesFrom())
+		try
 		{
-			Conexion c = e.darInfoArco();
-			if(c.isHabilitado()&&c.getOrigen().isHabilitada())
+			Estacion destino = grafo.darVertice(id).darValor();
+			Lista<Estacion> lista = new LlamaArrayList<>(200);
+			if(!destino.isHabilitada())
+				throw new BiciException("La estación destino no está habilitada");
+			lista.addAlFinal(destino);
+			GraphVertex<Integer, Estacion, Conexion> dest = (GraphVertex<Integer, Estacion, Conexion>)grafo.darVertice(id);
+			for(GraphEdge<Integer, Estacion, Conexion> e:dest.getEdgesFrom())
 			{
-				lista.addAlFinal(c.getOrigen());
+				Conexion c = e.darInfoArco();
+				if(c.isHabilitado()&&c.getOrigen().isHabilitada())
+				{
+					lista.addAlFinal(c.getOrigen());
+				}
 			}
-		}
 
-		return lista;
+			return lista;
+		}
+		catch (NullPointerException e)
+		{
+			throw new BiciException("No existe una estación con ese id");
+		}
 	}
 
 	public Lista<Estacion> caminoMasCortoABEst(int idOrigen, int idDestino) throws BiciException
 	{
 
 		IVertice<Integer, Estacion, Conexion> destino = grafo.darVertice(idDestino);
-		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idDestino);
+		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
 
 		if(destino==null)
 			throw new BiciException("La estacoin destino no existe");
@@ -325,6 +358,10 @@ public class BicycleManager
 		Lista<Estacion> lista = new LlamaArrayList<>(200);
 
 		ICamino<Integer, Estacion, Conexion> camino = grafo.darCaminoMasBarato(idOrigen, idDestino);
+		if(camino==null)
+			throw new BiciException("No hay camino entre estas estaciones");
+		tiempo+=camino.darCosto();
+		longitud+=camino.darLongitud();
 		Iterator<IVertice<Integer, Estacion, Conexion>> it = camino.darVertices();
 
 		while(it.hasNext())
@@ -393,6 +430,7 @@ public class BicycleManager
 		Lista<Conexion> lista = new LlamaArrayList<>(20);
 
 		CaminoMinimo<Integer, Estacion, Conexion> cams = (CaminoMinimo<Integer, Estacion, Conexion>)grafo.darCaminosMinimos(idOrigen);
+		System.out.println();
 		Iterator<Camino<Integer, Estacion, Conexion>> it = cams.darCaminos();
 		while(it.hasNext())
 		{
@@ -400,7 +438,9 @@ public class BicycleManager
 			Iterator<IArco<Integer, Estacion, Conexion>> itv = c.darArcos();
 			while(itv.hasNext())
 			{
-				lista.addAlFinal(itv.next().darInfoArco());
+				IArco<Integer,Estacion,Conexion> cx = itv.next();
+				System.out.println("Este es la conex: "+cx.darInfoArco()+"Y este es su tiempo: "+cx.darCosto());
+				lista.addAlFinal(cx.darInfoArco());
 			}
 		}
 
@@ -459,6 +499,8 @@ public class BicycleManager
 
 	public Lista<Estacion> mayorViajeEst(int idOrigen) throws BiciException
 	{
+		longitud=0;
+		tiempo=0;
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
 		if(origen==null)
 			throw new BiciException("La estacion origen no existe");
@@ -477,6 +519,7 @@ public class BicycleManager
 				mayor=c;
 			}
 		}
+		tiempo = mayor.darCosto()/mayor.darLongitud();
 		Iterator<IVertice<Integer, Estacion, Conexion>> itv = mayor.darVertices();
 		while(itv.hasNext())
 		{
@@ -485,7 +528,15 @@ public class BicycleManager
 
 		return lista;
 	}
-	
+
+	public double getTiempo() {
+		return tiempo;
+	}
+
+	public int getLongitud() {
+		return longitud;
+	}
+
 	public Lista<Conexion> mayorViajeConex(int idOrigen) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -514,13 +565,15 @@ public class BicycleManager
 
 		return lista;
 	}
-	
+
 	public Lista<Estacion> recomendarViajeEst(String estaciones, int idOrigen) throws BiciException
 	{
+		tiempo=0;
+		longitud=0;
 		String[] estacionesR = estaciones.split(" ");
 		int anterior = idOrigen;
 		Lista<Estacion>lista = new LlamaArrayList<>(20);
-		
+
 		for(int i =0; i<estacionesR.length;i++)
 		{
 			int actual = Integer.parseInt(estacionesR[i]);
@@ -529,17 +582,19 @@ public class BicycleManager
 			} catch (BiciException e) {
 				throw new BiciException("La estación con id: "+actual+"o: "+anterior+"no existe");
 			}
+			anterior=actual;
 		}
-		
+		tiempo=tiempo/longitud;
+
 		return lista;
 	}
-	
+
 	public Lista<Conexion> recomendarViajeConex(String estaciones, int idOrigen) throws BiciException
 	{
 		String[] estacionesR = estaciones.split(" ");
 		int anterior = idOrigen;
 		Lista<Conexion>lista = new LlamaArrayList<>(20);
-		
+
 		for(int i =0; i<estacionesR.length;i++)
 		{
 			int actual = Integer.parseInt(estacionesR[i]);
@@ -549,7 +604,7 @@ public class BicycleManager
 				throw new BiciException("La estación con id: "+actual+"o: "+anterior+"no existe");
 			}
 		}
-		
+
 		return lista;
 	}
 
@@ -572,6 +627,11 @@ public class BicycleManager
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public Estacion getSeleccionada()
+	{
+		return seleccionada;
 	}
 
 }

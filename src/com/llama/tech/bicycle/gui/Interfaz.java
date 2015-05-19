@@ -4,7 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -21,8 +27,11 @@ import com.llama.tech.bicycle.backend.Estacion;
 import com.llama.tech.misc.LlamaTuple;
 import com.llama.tech.utils.list.Lista;
 
-public class Interfaz extends JFrame implements ActionListener{
+public class Interfaz extends JFrame implements ActionListener
+{
 
+	public final static String FILE_PATH = "./data/state.llama";
+	
 	public final static int CAMINOS = 1;
 	public final static int CONEXIONES = 2;
 
@@ -34,34 +43,59 @@ public class Interfaz extends JFrame implements ActionListener{
 
 	public Interfaz()
 	{
-		boolean limitar = JOptionPane.showConfirmDialog(this, "Desea limitar las conexiones por número de viajes?")==JOptionPane.YES_OPTION;
-		int limite=0;
-		if(limitar)
+		File f = new File(FILE_PATH);
+		if(!f.exists())
 		{
-			while(limitar)
+			boolean limitar = JOptionPane.showConfirmDialog(this, "Desea limitar las conexiones por número de viajes?")==JOptionPane.YES_OPTION;
+			int limite=0;
+			if(limitar)
 			{
-				try
+				while(limitar)
 				{
-					limitar=false;
-					limite = Integer.parseInt(JOptionPane.showInputDialog("Introduzca el limite"));
-				}
-				catch(NumberFormatException e)
-				{
-					limitar=true;
-					JOptionPane.showMessageDialog(this, "Debe introducir un número","Error", JOptionPane.WARNING_MESSAGE);
+					try
+					{
+						limitar=false;
+						limite = Integer.parseInt(JOptionPane.showInputDialog("Introduzca el limite"));
+					}
+					catch(NumberFormatException e)
+					{
+						limitar=true;
+						JOptionPane.showMessageDialog(this, "Debe introducir un número","Error", JOptionPane.WARNING_MESSAGE);
+					}
 				}
 			}
+			
+			try 
+			{
+				bm = new BicycleManager(limite);
+			} 
+			catch (BiffException | IOException e) 
+			{
+				JOptionPane.showMessageDialog(this, "Hubo un error durante la carga de los archivos", "Error Fatal", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				System.exit(-1);//
+			}
 		}
-		
-		try 
+		else
 		{
-			bm = new BicycleManager(limite);
-		} 
-		catch (BiffException | IOException e) 
-		{
-			JOptionPane.showMessageDialog(this, "Hubo un error durante la carga de los archivos", "Error Fatal", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
-			System.exit(-1);//
+			try(FileInputStream fis = new FileInputStream(f))
+			{
+				ObjectInputStream ois = new ObjectInputStream(fis);
+				bm = ((BicycleManager) ois.readObject());
+			} 
+			catch (IOException e) 
+			{
+				JOptionPane.showMessageDialog(this, "Hubo un error durante la carga de los archivos", "Error Fatal", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				System.exit(-1);
+			} 
+			catch (ClassNotFoundException e) 
+			{
+				JOptionPane.showMessageDialog(this, "Hubo un error durante la carga de los archivos", "Error Fatal", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				System.exit(-1);
+			}
+			
 		}
 
 		DialogoInicio di = new DialogoInicio();
@@ -124,10 +158,6 @@ public class Interfaz extends JFrame implements ActionListener{
 		repaint();
 	}
 
-	public static void main(String[] args) {
-		Interfaz i = new Interfaz();
-		i.setVisible(true);
-	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -207,7 +237,7 @@ public class Interfaz extends JFrame implements ActionListener{
 
 	public void disableConnection(Conexion selected) 
 	{
-		bm.deshabilitarCamino(selected);
+		bm.deshabilitarCamino(selected.getNumero());
 		
 	}
 
@@ -215,6 +245,111 @@ public class Interfaz extends JFrame implements ActionListener{
 	{
 		bm.habilitarCamino(selected.getNumero());
 		
+	}
+
+	public Lista<Estacion> getShortestPathTwoWay(int origin, int dest) 
+	{
+		try
+		{
+			return bm.caminoMasCortoABEst(origin, dest);
+		}
+		catch(BiciException be)
+		{
+			JOptionPane.showMessageDialog(this, be.getMessage(),"Información", JOptionPane.INFORMATION_MESSAGE);
+		}
+		return null;
+	}
+	
+	
+	public static void main(String[] args) 
+	{
+		Interfaz i = new Interfaz();
+		i.setVisible(true);
+	}
+
+	public Lista<Conexion> pathFromStation(int origin) 
+	{
+		try
+		{
+			return bm.caminosMasCortosConex(origin);
+		}
+		catch(BiciException be)
+		{
+			JOptionPane.showMessageDialog(this, be.getMessage(),"Información", JOptionPane.INFORMATION_MESSAGE);
+		}
+		return null;
+	}
+
+	public Lista<Conexion> pathWithinTimeLimit(int origin, int tiempo) 
+	{
+		try
+		{
+			return bm.esTiempoLimiteConex(origin, tiempo);
+		}
+		catch(BiciException be)
+		{
+			JOptionPane.showMessageDialog(this, be.getMessage(),"Información", JOptionPane.INFORMATION_MESSAGE);
+		}
+		return null;
+	}
+
+	public Lista<Estacion> pathRecommendation(int origen, String estaciones) 
+	{
+		try
+		{
+			return bm.recomendarViajeEst(estaciones, origen);
+		}
+		catch(BiciException be)
+		{
+			JOptionPane.showMessageDialog(this, be.getMessage(),"Información", JOptionPane.INFORMATION_MESSAGE);
+		}
+		return null;
+	}
+
+	public double getTime() 
+	{
+		return bm.getTiempo();
+	}
+
+	public Lista<Estacion> longestPath(int o) 
+	{
+		try
+		{
+			return bm.mayorViajeEst(o);
+		}
+		catch(BiciException be)
+		{
+			JOptionPane.showMessageDialog(this, be.getMessage(),"Información", JOptionPane.INFORMATION_MESSAGE);
+		}
+		return null;
+	}
+
+	public Estacion getSelectedStation() 
+	{
+		return bm.getSeleccionada();
+	}
+	
+	public void serialize()
+	{
+		File f = new File(FILE_PATH);
+		
+		try(FileOutputStream fos = new FileOutputStream(f))
+		{
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.writeObject(bm);
+			
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		
+	}
+	
+	@Override
+	public void dispose()
+	{
+		serialize();
+		System.exit(0);
 	}
 
 }
