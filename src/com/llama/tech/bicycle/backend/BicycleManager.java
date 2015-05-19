@@ -634,4 +634,10 @@ public class BicycleManager implements Serializable
 		return seleccionada;
 	}
 
+	public void reloadInstance() 
+	{
+		CaminoMinimo.initializeInstance(grafo);
+		
+	}
+
 }

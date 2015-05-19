@@ -82,6 +82,7 @@ public class Interfaz extends JFrame implements ActionListener
 			{
 				ObjectInputStream ois = new ObjectInputStream(fis);
 				bm = ((BicycleManager) ois.readObject());
+				bm.reloadInstance();
 			} 
 			catch (IOException e) 
 			{
