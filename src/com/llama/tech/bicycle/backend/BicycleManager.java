@@ -1,3 +1,23 @@
+/*
+ * BicycleManager.java
+ * This file is part of LlamaBicycle
+ *
+ * Copyright (C) 2015 - LlamaTech Team 
+ *
+ * LlamaUtils is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * LlamaUtils is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LlamaUtils. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.llama.tech.bicycle.backend;
 
 import java.io.File;
@@ -27,13 +47,24 @@ import com.llama.tech.utils.graph.LlamaGraph;
 import com.llama.tech.utils.list.Lista;
 import com.llama.tech.utils.list.LlamaArrayList;
 
+/**
+ * Clase que describe, define y enlaza las funciones principales del funcionamiento del programa.
+ * @author Llamatech
+ *
+ */
 public class BicycleManager implements Serializable
 {
+	/**
+	 * Constantes que establecen restricciones sobre la carga de los archivos principales del sistema.
+	 */
 	public static final String RUTA_ESTACIONES = "data/Estaciones-Hubway.xls";
 	public static final String RUTA_CONEXIONES = "data/Conexiones-Hubway.xls";
 	public static final int NOLIMIT = 0;
 
-	private LlamaGraph<Integer, Estacion, Conexion> grafo;
+	/**
+	 * Atributos de la clase
+	 */
+	private LlamaGraph<Integer, Estacion, Conexion> grafo;      
 	private Estacion seleccionada;
 	private Dictionary<Integer, Conexion> caminos;
 	private Dictionary<Integer, Estacion> estaciones;
@@ -43,6 +74,12 @@ public class BicycleManager implements Serializable
 	double tiempo;
 	int longitud;
 
+	/**
+	 * Constructor del sistema de control de rutas.
+	 * @param limite Límite del número de conexiones a cargar y visualizar.
+	 * @throws BiffException Si ocurre un error al procesar un archivo XLS
+	 * @throws IOException Si ocurre un error de Entrada/Salida
+	 */
 	public BicycleManager(int limite) throws BiffException, IOException
 	{
 		grafo = new LlamaGraph<Integer, Estacion, Conexion>();
@@ -55,6 +92,12 @@ public class BicycleManager implements Serializable
 		cargarConexiones(limite);
 	}
 
+	/**
+	 * Función principal para la carga de los archivos principales sin restricción sobre
+	 * el número de conexiones.
+	 * @throws BiffException Si ocurre un error al procesar un archivo XLS
+	 * @throws IOException Si ocurre un error de Entrada/Salida
+	 */
 	public void cargarEstaciones() throws BiffException, IOException
 	{
 		File f = new File(RUTA_ESTACIONES);
@@ -98,6 +141,13 @@ public class BicycleManager implements Serializable
 		}		
 	}
 
+	/**
+	 * Función principal para la carga de los archivos principales con restricción sobre
+	 * el número de conexiones.
+	 * @param limite Límite de estaciones a cargar.
+	 * @throws BiffException Si ocurre un error al procesar un archivo XLS
+	 * @throws IOException Si ocurre un error de Entrada/Salida
+	 */
 	public void cargarConexiones(int limite) throws BiffException, IOException
 	{
 		File f = new File(RUTA_CONEXIONES);
@@ -142,6 +192,10 @@ public class BicycleManager implements Serializable
 		}
 	}
 
+	/**
+	 * Habilita una estación del sistema, dado su número de identificación.
+	 * @param id El número de identificiación de la estación.
+	 */
 	public void habilitarEstacion(int id)
 	{
 		Estacion e = estaciones.getValue(id);
@@ -155,6 +209,10 @@ public class BicycleManager implements Serializable
 
 	}
 
+	/**
+	 * Deshabilita la estación del sistema actualmente seleccionada por el usuario
+	 * @throws BiciException Si no hay una estación seleccionada previamente.
+	 */
 	public void deshabilitarEstacion() throws BiciException
 	{
 		if (seleccionada==null)
@@ -166,6 +224,10 @@ public class BicycleManager implements Serializable
 		seleccionada=null;
 	}
 
+	/**
+	 * Habilita una conexión del sistema, dado un número de identificación.
+	 * @param numero El número de identificación de la conexión.
+	 */
 	public void habilitarCamino(int numero)
 	{
 		Conexion c = caminos.getValue(numero);
@@ -181,6 +243,10 @@ public class BicycleManager implements Serializable
 		
 	}
 
+	/**
+	 * Desabilita una conexión del sistema, dado un número de identificación.
+	 * @param cx El número de identificación de la conexión.
+	 */
 	public void deshabilitarCamino(int cx)
 	{	
 		Conexion c = caminos.getValue(cx);
@@ -189,6 +255,11 @@ public class BicycleManager implements Serializable
 		caminosDes.addAlFinal(c);
 	}
 
+	/**
+	 * Establece la estación actualmente seleccionada por el usuario, sujeto a 
+	 * la distancia de la misma al punto seleccionado por el usuario. 
+	 * @param es Pareja de coordenadas geográficas (Lat, Long)
+	 */
 	public void selectStation(LlamaTuple<Double, Double> es)
 	{
 		if(seleccionada!=null)
@@ -211,6 +282,12 @@ public class BicycleManager implements Serializable
 		}
 	}
 
+	/**
+	 * Retorna una lista de conexiones salientes desde una estación identificada con número id.
+	 * @param id El número de identificación de la estación solicitada.
+	 * @return Una lista con las Conexiones salientes desde la estación.
+	 * @throws BiciException Si no existe una estación con el id solicitado.
+	 */
 	public Lista<Conexion> conexionesDesdeConex(int id) throws BiciException
 	{
 		try{
@@ -235,6 +312,13 @@ public class BicycleManager implements Serializable
 		}
 	}
 
+	/**
+	 * Retorna una lista de estaciones que conforman una conexión saliente desde una estación 
+	 * identificada con número id.
+	 * @param id El número de identificación de la estación solicitada.
+	 * @return Una lista con las Estaciones que conforman una conexión saliente desde la estación.
+	 * @throws BiciException Si no existe una estación con el id solicitado.
+	 */
 	public Lista<Estacion> conexionesDesdeEst(int id) throws BiciException
 	{
 		try{
@@ -260,6 +344,10 @@ public class BicycleManager implements Serializable
 		}
 	}
 
+	/**
+	 * Retorna una lista que contiene todas las conexiones del sistema.
+	 * @return Una lista que contiene todas las Conexiones del sistema.
+	 */
 	public Lista<Conexion> todosConex()
 	{
 		Lista<Conexion> lista = new LlamaArrayList<>(20000);
@@ -275,6 +363,10 @@ public class BicycleManager implements Serializable
 
 	}
 
+	/**
+	 * Retorna una lista que contiene todas las estaciones del sistema.
+	 * @return Una lista que contiene todas las estaciones del sistema.
+	 */
 	public Lista<Estacion> todosEst()
 	{
 		Lista<Estacion> lista = new LlamaArrayList<>(200);
@@ -290,6 +382,13 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Retorna una lista que contiene las conexiones entrantes a una estación 
+	 * identificada con número id.
+	 * @param id El número de identificación de la estación solicitada.
+	 * @return Una lista con las Conexiones entrantes a la estación.
+	 * @throws BiciException Si no existe una estación con el id solicitado.
+	 */
 	public Lista<Conexion> conexionesHaciaConex(int id) throws BiciException 
 	{
 		try
@@ -317,6 +416,14 @@ public class BicycleManager implements Serializable
 
 	}
 
+	/**
+	 * Retorna una lista que contiene las estaciones que conforman todas las conexiones 
+	 * entrantes a una estación identificada con número id.
+	 * @param id El número de identificación de la estación solicitada.
+	 * @return Una lista que contiene las estaciones que conforman todas las conexiones 
+	 * entrantes a la estación.
+	 * @throws BiciException Si no existe una estación con el id solicitado.
+	 */
 	public Lista<Estacion> conexionesHaciaEst(int id) throws BiciException
 	{
 		try
@@ -344,6 +451,13 @@ public class BicycleManager implements Serializable
 		}
 	}
 
+	/**
+	 * Establece las Estaciones que conforman el camino más corto entre dos estaciones.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @param idDestino El número de identificación de la estación de destino.
+	 * @return Una lista de Estaciones que conforman el camino más corto entre dos estaciones.
+	 * @throws BiciException Si el id de la estación de origen/destino, no existe.
+	 */
 	public Lista<Estacion> caminoMasCortoABEst(int idOrigen, int idDestino) throws BiciException
 	{
 
@@ -373,7 +487,14 @@ public class BicycleManager implements Serializable
 		return lista;
 
 	}
-
+	
+	/**
+	 * Establece las Conexiones que conforman el camino más corto entre dos estaciones.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @param idDestino El número de identificación de la estación de destino.
+	 * @return Una lista de Conexiones que conforman el camino más corto entre dos estaciones.
+	 * @throws BiciException Si el id de la estación de origen/destino, no existe.
+	 */
 	public Lista<Conexion> caminoMasCortoABConex(int idOrigen, int idDestino) throws BiciException
 	{
 
@@ -400,6 +521,12 @@ public class BicycleManager implements Serializable
 
 	}
 
+	/**
+	 * Establece las estaciones que conforman los caminos más cortos desde una estación de origen
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @return Una lista que contiene las estaciones que conforman los caminos más cortos desde la estación
+	 * @throws BiciException Si el número de identificación de la estación no existe.
+	 */
 	public Lista<Estacion> caminosMasCortosEst(int idOrigen) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -422,6 +549,12 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Establece las conexiones que conforman los caminos más cortos desde una estación de origen
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @return Una lista que contiene las conexiones que conforman los caminos más cortos desde la estación
+	 * @throws BiciException Si el número de identificación de la estación no existe.
+	 */
 	public Lista<Conexion> caminosMasCortosConex(int idOrigen) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -447,6 +580,15 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Retorna las estaciones que pueden ser recorridas, partiendo desde una estación de origen 
+	 * dentro de un tiempo límite.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @param t El tiempo límite de recorrido.
+	 * @return Una lista que contiene las estaciones que pueden ser recorridas dentro del tiempo límite a partir
+	 * de la estación.
+	 * @throws BiciException Si el número de identificación de la estación de origen no existe.
+	 */
 	public Lista<Estacion> estTiempoLimiteEst(int idOrigen, int t) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -472,6 +614,15 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Retorna las conexiones que pueden ser recorridas, partiendo desde una estación de origen 
+	 * dentro de un tiempo límite.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @param t El tiempo límite de recorrido. t > 0.
+	 * @return Una lista que contiene las conexiones que pueden ser recorridas dentro del tiempo límite a partir
+	 * de la estación.
+	 * @throws BiciException Si el número de identificación de la estación de origen no existe.
+	 */
 	public Lista<Conexion> esTiempoLimiteConex(int idOrigen, int t) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -497,6 +648,12 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Retorna las estaciones que conforman el viaje de mayor lognitud desde una estación de origen.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @return Una lista que contiene las estaciones que conforman el viaje de mayor lognitud desde una estación de origen.
+	 * @throws BiciException Si el número de identificación de la estación de origen, no existe.
+	 */
 	public Lista<Estacion> mayorViajeEst(int idOrigen) throws BiciException
 	{
 		longitud=0;
@@ -529,14 +686,30 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
-	public double getTiempo() {
+	/**
+	 * Retorna el tiempo total de viaje de la última consulta realizada.
+	 * @return El tiempo total de viaje de la última consulta realizada.
+	 */
+	public double getTiempo() 
+	{
 		return tiempo;
 	}
 
-	public int getLongitud() {
+	/**
+	 * Retorna la longitud total del último recorrido consultado.
+	 * @return La longitud total del último recorrido consultado.
+	 */
+	public int getLongitud() 
+	{
 		return longitud;
 	}
 
+	/**
+	 * Retorna las Conexiones que conforman el viaje de mayor lognitud desde una estación de origen.
+	 * @param idOrigen El número de identificación de la estación de origen.
+	 * @return Una lista que contiene las conexiones que conforman el viaje de mayor lognitud desde una estación de origen.
+	 * @throws BiciException Si el número de identificación de la estación de origen, no existe.
+	 */
 	public Lista<Conexion> mayorViajeConex(int idOrigen) throws BiciException
 	{
 		IVertice<Integer, Estacion, Conexion> origen = grafo.darVertice(idOrigen);
@@ -566,6 +739,14 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Establece una ruta óptima entre dos estaciones, sujeto a una lista de estaciones que
+	 * deben ser visitadas.
+	 * @param estaciones Enumeración con las estaciones a visitar, separadas por espacio.
+	 * @param idOrigen Número de identificación de la estación de origen.
+	 * @return Una lista con las estaciones que deben ser recorridas y que satisfacen la condición.
+	 * @throws BiciException Si el número de identificación de la estación de origen, no existe.
+	 */
 	public Lista<Estacion> recomendarViajeEst(String estaciones, int idOrigen) throws BiciException
 	{
 		tiempo=0;
@@ -589,6 +770,14 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
+	/**
+	 * Establece una ruta óptima entre dos estaciones, sujeto a una lista de estaciones que
+	 * deben ser visitadas.
+	 * @param estaciones Enumeración con las estaciones a visitar, separadas por espacio.
+	 * @param idOrigen Número de identificación de la estación de origen.
+	 * @return Una lista con las Conexiones que deben ser recorridas y que satisfacen la condición.
+	 * @throws BiciException Si el número de identificación de la estación de origen, no existe.
+	 */
 	public Lista<Conexion> recomendarViajeConex(String estaciones, int idOrigen) throws BiciException
 	{
 		String[] estacionesR = estaciones.split(" ");
@@ -608,32 +797,36 @@ public class BicycleManager implements Serializable
 		return lista;
 	}
 
-
-	public Lista<Conexion> getCaminosDes() {
+    /**
+     * Retorna una lista con las conexiones salientes de una estación de origen.
+     * @return La lista con conexiones salientes desde una estación.
+     */
+	public Lista<Conexion> getCaminosDes() 
+	{
 		return caminosDes;
 	}
 
-	public Lista<Estacion> getEstacionesDes() {
+	/**
+     * Retorna una lista con las estaciones que conforman todas las conexiones salientes de una estación de origen.
+     * @return La lista con las estaciones que conforman todas las conexiones salientes de una estación.
+     */
+	public Lista<Estacion> getEstacionesDes() 
+	{
 		return estacionesDes;
 	}
-
-	public static void main(String[] args) {
-		try {
-			BicycleManager bm = new BicycleManager(0);
-		} catch (BiffException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
+	
+	/**
+	 * Retorna la estación actualmente seleccionada.
+	 * @return La Estación actualmente seleccionada, null en caso de que no exista.
+	 */
 	public Estacion getSeleccionada()
 	{
 		return seleccionada;
 	}
 
+	/**
+	 * Solicita una instancia del gestor de Caminos Mínimos.
+	 */
 	public void reloadInstance() 
 	{
 		CaminoMinimo.initializeInstance(grafo);
